@@ -52,9 +52,9 @@ jobs:
 
 
       - name: Scan Frontend Image
-        run: trivy image todo-frontend --severity CRITICAL,HIGH --format json --output trivy-frontend-report.json
+        run: trivy image frontend --severity CRITICAL,HIGH --format json --output trivy-frontend-report.json
       - name: Scan Backend Image
-        run: trivy image todo-backend --severity CRITICAL,HIGH --format json --output trivy-backend-report.json
+        run: trivy image backend --severity CRITICAL,HIGH --format json --output trivy-backend-report.json
       - name: 📝 Upload Trivy Reports
         uses: actions/upload-artifact@v4
         with:
