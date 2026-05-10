@@ -1,0 +1,75 @@
+name: Docker Compose Build & Push
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Docker image version (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+
+    env:
+      VERSION: ${{ github.event.inputs.version }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose version  
+      - name: 🧱 Build services with Docker Compose
+        run: |
+          docker-compose build --build-arg VERSION=$VERSION
+      - name: Build Backend Image
+        run: |
+            docker build -t backend --build-arg VERSION=$VERSION ./backend
+      - name: Build Frontend Image
+        run: |
+            docker build -t frontend --build-arg VERSION=$VERSION ./frontend
+      - name: Install Trivy 
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+            wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+            echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+            sudo apt-get update
+            sudo apt-get install -y trivy
+
+
+      - name: Scan Frontend Image
+        run: trivy image todo-frontend --severity CRITICAL,HIGH --format json --output trivy-frontend-report.json
+      - name: Scan Backend Image
+        run: trivy image todo-backend --severity CRITICAL,HIGH --format json --output trivy-backend-report.json
+      - name: 📝 Upload Trivy Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-reports
+          path: |
+                trivy-frontend-report.json
+                trivy-backend-report.json
+     
+      - name: Tag and Push Backend Image
+        run: |
+            docker tag backend $DOCKERHUB_USERNAME/todo-backend:$VERSION
+            docker push $DOCKERHUB_USERNAME/todo-backend:$VERSION
+
+
+      - name: Tag and Push Frontend Image
+        run: |
+            docker tag frontend $DOCKERHUB_USERNAME/todo-frontend:$VERSION
+            docker push $DOCKERHUB_USERNAME/todo-frontend:$VERSION
