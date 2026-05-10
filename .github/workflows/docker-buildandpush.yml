@@ -32,9 +32,9 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose version  
-      - name: 🧱 Build services with Docker Compose
-        run: |
-          docker-compose build --build-arg VERSION=$VERSION
+      #- name: 🧱 Build services with Docker Compose
+      #  run: |
+       #   docker-compose build --build-arg VERSION=$VERSION
       - name: Build Backend Image
         run: |
             docker build -t backend --build-arg VERSION=$VERSION ./backend
