@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: svsaket/todo-frontend:v1.0.1
+        image: svsaket/todo-frontend:v1.0.2
         ports:
         - containerPort: 3000
