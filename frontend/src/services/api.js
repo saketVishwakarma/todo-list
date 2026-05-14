@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://backend:8000",
+  baseURL: "http://192.168.56.102:3008",
 });
 
 export const getTasks = () => API.get("/tasks");
