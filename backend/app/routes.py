@@ -31,3 +31,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
         db.delete(task)
         db.commit()
     return {"message": "deleted"}
+
+@router.get("/health")
+def health():
+    return {"status": "ok"}
