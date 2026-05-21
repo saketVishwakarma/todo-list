@@ -1,4 +1,4 @@
 resources:
-  - statefulset.yaml
-  - secret.yaml
-  - service.yaml
+  - statefulset.yml
+  - secret.yml
+  - service.yml

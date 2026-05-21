@@ -1,5 +1,5 @@
 resources:
-  - configmap.yaml
-  - secret.yaml
-  - deployment.yaml
-  - service.yaml
+  - configmap.yml
+  - secret.yml
+  - deployment.yml
+  - service.yml
