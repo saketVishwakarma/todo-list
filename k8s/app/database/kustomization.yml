@@ -1,0 +1,4 @@
+resources:
+  - statefulset.yaml
+  - secret.yaml
+  - service.yaml
