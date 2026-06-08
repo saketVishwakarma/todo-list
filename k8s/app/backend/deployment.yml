@@ -39,7 +39,7 @@ spec:
 
       containers:
       - name: backend
-        image: svsaket/todo-backend:v1.1.0
+        image: svsaket/todo-backend:v1.1.1
 
         ports:
         - containerPort: 8000
