@@ -3,3 +3,4 @@ resources:
   - deployment.yml
   - service.yml
   - pdb.yml
+  - networkpolicy.yml
