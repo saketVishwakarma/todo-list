@@ -30,19 +30,19 @@ spec:
         image: svsaket/todo-frontend:v1.1.1
 
         ports:
-        - containerPort: 80
+        - containerPort: 3000
 
         readinessProbe:
           httpGet:
             path: /
-            port: 80
+            port: 3000
           initialDelaySeconds: 5
           periodSeconds: 5
 
         livenessProbe:
           httpGet:
             path: /
-            port: 80
+            port: 3000
           initialDelaySeconds: 20
           periodSeconds: 10
 
