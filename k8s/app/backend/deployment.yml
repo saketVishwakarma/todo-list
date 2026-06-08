@@ -76,8 +76,8 @@ spec:
               key: DB_PASSWORD
 
         - name: DATABASE_URL
-          value: postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)
-
+         # value: postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)
+          value: postgresql://postgres:postgres@postgres:5432/tododb
         readinessProbe:
           httpGet:
             path: /health
