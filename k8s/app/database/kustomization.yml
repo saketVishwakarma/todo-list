@@ -2,3 +2,4 @@ resources:
   - statefulset.yml
   - secret.yml
   - service.yml
+  - networkpolicy.yml
