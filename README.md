@@ -16,22 +16,33 @@ A production-style full-stack application deployed on a multi-node Kubernetes (k
 ---
 
 ## Architecture
-
 ```text
 Windows Browser
-    ↓
+       │
+       ▼
 Frontend Service (NodePort)
-    ↓
-React Frontend Pod
-    ↓
-Backend Service
-    ↓
-FastAPI Backend Pod
-    ↓
-PostgreSQL Service
-    ↓
-PostgreSQL Pod
-```
+       │
+       ▼
+Frontend Deployment (2 Replicas)
+       │
+       ▼
+Backend Service (ClusterIP)
+       │
+       ▼
+Backend Deployment (2 Replicas)
+       │
+       ▼
+PostgreSQL Headless Service
+       │
+       ▼
+PostgreSQL StatefulSet
+       │
+       ▼
+Persistent Volume Claim
+
+
+```  ↓
+
 
 Multi-node cluster:
 
@@ -59,14 +70,30 @@ todo-platform/
 │   ├── package.json
 │   └── Dockerfile
 │
-├── k8s/
-│   ├── frontend-deployment.yaml
-│   ├── frontend-service.yaml
-│   ├── backend-deployment.yaml
-│   ├── backend-service.yaml
-│   ├── postgres-pod.yaml
-│   └── postgres-service.yaml
+├──k8s/
+├── base/
+│   ├── namespace.yaml
+│   └── kustomization.yaml
 │
+├── app/
+│   ├── frontend/
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   ├── configmap.yaml
+│   │   └── kustomization.yaml
+│   │
+│   ├── backend/
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   ├── configmap.yaml
+│   │   ├── secret.yaml
+│   │   └── kustomization.yaml
+│   │
+│   └── database/
+│       ├── statefulset.yaml
+│       ├── service.yaml
+│       ├── secret.yaml
+│       └── kustomization.yaml
 └── docker-compose.yml
 ```
 
@@ -371,26 +398,243 @@ kubectl exec -it deployment/backend -- nc -vz postgres 5432
 ---
 
 ## Learning Outcomes
-
 * Full-stack application deployment
 * Docker image creation and registry workflows
-* Kubernetes Deployments, Services, NodePort
+* Multi-node Kubernetes cluster administration
+* Kubernetes Deployments, Services, StatefulSets
+* Persistent Volume Claims and storage management
+* Kubernetes Secrets and ConfigMaps
+* Readiness and Liveness Probes
+* Resource Requests and Limits
+* Kustomize-based manifest management
 * DNS-based service discovery
 * Cross-node networking troubleshooting
-* Cluster debugging and operational troubleshooting
-* CORS and frontend/backend integration debugging
+* Application startup orchestration using initContainers
+* Production debugging across application, database, and Kubernetes layers
+* Stateful workload management
+
+---
+## Production Hardening Implemented
+
+### Namespace Isolation
+
+Created a dedicated namespace:
+
+```bash
+todo-app
+```
+
+Benefits:
+
+* Workload isolation
+* Simplified resource management
+* Easier RBAC and NetworkPolicy implementation
+* GitOps-friendly structure
 
 ---
 
+### Kustomize-Based Deployment Structure
+
+Refactored manifests into application-specific folders and kustomization files.
+
+Benefits:
+
+* Cleaner repository organization
+* Environment-specific overlays support
+* ArgoCD-ready structure
+
+---
+
+### Kubernetes Secrets
+
+Implemented Secrets for sensitive database credentials.
+
+Examples:
+
+* POSTGRES_USER
+* POSTGRES_PASSWORD
+* DB_USER
+* DB_PASSWORD
+
+Secret Type:
+
+```yaml
+type: Opaque
+```
+
+---
+
+### ConfigMaps
+
+Implemented ConfigMaps for non-sensitive application configuration.
+
+Examples:
+
+* DB_HOST
+* DB_PORT
+* DB_NAME
+
+Benefits:
+
+* Separation of configuration from application code
+* Environment-specific customization
+
+---
+
+### PostgreSQL StatefulSet
+
+Migrated PostgreSQL from a standalone pod to a StatefulSet.
+
+Benefits:
+
+* Stable pod identity
+* Stable DNS records
+* Persistent storage support
+* Ordered startup and shutdown
+
+---
+
+### Persistent Storage
+
+Implemented PersistentVolumeClaim-backed storage.
+
+Benefits:
+
+* Data survives pod restarts
+* Stateful workloads supported
+* Production-style database deployment
+
+---
+
+### Health Probes
+
+Implemented:
+
+* Readiness Probes
+* Liveness Probes
+
+Benefits:
+
+* Automatic health validation
+* Improved application availability
+* Automated recovery from unhealthy states
+
+---
+
+### Resource Governance
+
+Implemented Kubernetes resource requests and limits.
+
+Benefits:
+
+* Predictable scheduling
+* Resource protection
+* Prevention of noisy-neighbor issues
+
+---
+
+### Startup Dependency Management
+
+Implemented initContainers for backend startup sequencing.
+
+Benefits:
+
+* Backend waits for PostgreSQL availability
+* Eliminates startup race conditions
+### 11. PostgreSQL Authentication Failure
+
+**Issue:**
+
+```text
+password authentication failed for user "postgres"
+```
+
+**Root Cause:**
+
+Backend application was not using the Kubernetes-injected database connection string.
+
+**Fix:**
+
+Updated FastAPI database configuration to consume:
+
+```python
+DATABASE_URL = os.getenv("DATABASE_URL")
+```
+
+instead of using a stale hardcoded connection string.
+
+---
+
+### 12. Frontend CrashLoopBackOff After Health Probe Introduction
+
+**Issue:**
+
+```text
+Liveness probe failed
+connection refused
+```
+
+**Root Cause:**
+
+React frontend container was serving traffic on port 3000 while Kubernetes probes targeted port 80.
+
+**Fix:**
+
+Updated:
+
+* containerPort
+* readinessProbe
+* livenessProbe
+* service targetPort
+
+to use the correct application port.
+
+---
+
+### 13. StatefulSet Secret vs Existing Database Credentials
+
+**Issue:**
+
+Changing Kubernetes Secrets did not change database credentials.
+
+**Root Cause:**
+
+PostgreSQL only consumes initialization credentials during first database creation.
+
+**Learning:**
+
+Kubernetes Secrets do not automatically rotate existing database passwords.
+
 ## Next Planned Enhancements
 
-* Persistent Volumes for PostgreSQL
-* ConfigMaps
-* Secrets
-* Health probes
-* Resource requests/limits
+### Phase 5 - GitOps
+
+* ArgoCD installation
+* GitOps deployment workflow
+* Automatic synchronization
+* Rollback strategy
+
+### Phase 6 - Observability
+
+* Prometheus
+* Grafana
+* kube-state-metrics
+* Node Exporter
+* Application metrics
+
+### Phase 7 - Production Traffic Management
+
 * Ingress Controller
-* ArgoCD GitOps
-* Prometheus monitoring
-* Grafana dashboards
-* Horizontal Pod Autoscaling
+* TLS Certificates
+* cert-manager
+* Horizontal Pod Autoscaler (HPA)
+
+### Phase 8 - Advanced Platform Engineering
+
+* NetworkPolicies
+* PodDisruptionBudgets
+* RBAC
+* Helm
+* Kustomize overlays (Dev/Staging/Prod)
+* CI/CD integration
+* Container image scanning
