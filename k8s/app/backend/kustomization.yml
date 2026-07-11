@@ -3,5 +3,5 @@ resources:
   - secret.yml
   - deployment.yml
   - service.yml
-  - pdp.yml
+  - pdb.yml
   - networkpolicy.yml
