@@ -12,9 +12,8 @@ alertmanager:
   service:
     type: NodePort
 
-prometheus-node-exporter:
-  hostRootFsMount:
-    enabled: false
-
 kube-state-metrics:
+  enabled: true
+
+prometheus-node-exporter:
   enabled: true
