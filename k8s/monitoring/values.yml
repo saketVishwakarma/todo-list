@@ -1,0 +1,20 @@
+grafana:
+  adminUser: admin
+
+  service:
+    type: NodePort
+
+prometheus:
+  service:
+    type: NodePort
+
+alertmanager:
+  service:
+    type: NodePort
+
+prometheus-node-exporter:
+  hostRootFsMount:
+    enabled: false
+
+kube-state-metrics:
+  enabled: true
